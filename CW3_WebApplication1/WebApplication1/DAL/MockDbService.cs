@@ -11,34 +11,28 @@ namespace WebApplication1.DAL
     public class MockDbService : IDbService
     {
         private static List<Student> _students;
-
+        private const string CONN_STR = "Data Source=db-mssql;Initial Catalog=s16446;Integrated Security=True";
         static MockDbService() 
         {
             _students = new List<Student>();
-            //{
-            //    new Student{ IdStudent = 1, FirstName = "Anna", LastName = "Nowak"},
-            //    new Student{ IdStudent = 2, FirstName = "Robert", LastName = "Kowalski"},
-            //    new Student{ IdStudent = 3, FirstName = "Jerzy", LastName = "Szczepaniak"}
-            //};
-            string conn_str = "Data Source=db-mssql;Initial Catalog=s16446;Integrated Security=True";
-            using (var client = new SqlConnection(conn_str))
+
+            using (var client = new SqlConnection(CONN_STR))
             using (var com = new SqlCommand())
             {
                 com.Connection = client;
-                com.CommandText = "select [IndexNumber], [FirstName], [LastName] from dbo.Student;";
+                com.CommandText = "select [IndexNumber], [FirstName], [LastName], [BirthDate] from dbo.Student;";
                 client.Open();
 
                 var dr = com.ExecuteReader();
                 while (dr.Read())
                 {
                     var st = new Student();
-                    //st.IdStudent = Int32.Parse(dr["IdStudent"].ToString());
+                    st.IndexNumber = dr["IndexNumber"].ToString();
                     st.FirstName = dr["FirstName"].ToString();
                     st.LastName = dr["LastName"].ToString();
-                    st.IndexNumber = dr["IndexNumber"].ToString();
+                    st.BirthDate = DateTime.Parse(dr["BirthDate"].ToString()).ToShortDateString();
                     _students.Add(st);
                 }
-
             }
         }
 
@@ -47,9 +41,10 @@ namespace WebApplication1.DAL
             return _students;
         }
 
-        public IEnumerable<Student> GetStudent(int id) {
+        public IEnumerable<Student> GetStudent(string id) 
+        {
             List<Student> n = new List<Student>();
-            n.Add(_students.Find(x => x.IdStudent == id));
+            n.Add(_students.Find(x => x.IndexNumber.Equals(id)));
             return n;
         }
 
@@ -61,6 +56,43 @@ namespace WebApplication1.DAL
         public void DeleteStudent(Student student)
         {
             _students.Remove(student);
+        }
+
+        public IEnumerable<Enrollment> GetEnrollments(string id, int semester) {
+            List<Enrollment> wpisy = null;
+            
+            using (var client = new SqlConnection(CONN_STR))
+            using (var com = new SqlCommand())
+            {
+                com.Connection = client;
+                com.CommandText = "" +
+                "SELECT " +
+                  "  st.IndexNumber " +
+	              ", st.FirstName " +
+	              ", st.LastName " +
+                  ", e.Semester " +
+                  ", e.StartDate " +
+	              ", s.[Name] " +
+                "FROM dbo.Student st " +
+                "LEFT JOIN dbo.Enrollment e ON st.IdEnrollment = e.IdEnrollment " +
+                "LEFT JOIN dbo.Studies s ON e.IdStudy = s.IdStudy " +
+                "WHERE IndexNumber = '" + id + "' AND e.Semester = " + semester + ";";
+                Console.WriteLine(com.CommandText);
+                client.Open();
+                wpisy = new List<Enrollment>();
+
+                var dr = com.ExecuteReader();
+                while (dr.Read())
+                {
+                    var e = new Enrollment();
+                    e.Semester = dr["Semester"].ToString();
+                    e.StartDate = DateTime.Parse(dr["StartDate"].ToString()).ToShortDateString();
+                    e.StudiesName = dr["Name"].ToString();
+                    wpisy.Add(e);
+                    Console.WriteLine(e.StudiesName);
+                }
+            }
+            return wpisy;
         }
     }
 }

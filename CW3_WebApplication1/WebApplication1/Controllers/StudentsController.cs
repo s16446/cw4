@@ -21,35 +21,38 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetStudent(string orderBy) {
-            //return $"Nowak, Kowalska, Kossak {orderBy}";
-
+        public IActionResult GetStudents()
+        {
             return Ok(_dbService.GetStudents());
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetStudent(int id) {
- 
-
-                return Ok(_dbService.GetStudent(id));
+        public IActionResult GetStudent(string id)
+        {
+            return Ok(_dbService.GetStudent(id));
         }
 
-        [HttpPost]
-        public IActionResult CreateStudent(Student student) {
-            // ... adding to the database
+        [HttpGet("{id}/{semester}")] // student's ID for whom we want to get enrollments
+        public IActionResult GetEnrollments(string id, int semester)
+        {
+            return Ok(_dbService.GetEnrollments(id, semester));
+        }
+
+        [HttpPost] // add
+        public IActionResult CreateStudent(Student student) 
+        {
             _dbService.AddStudent(student);
-            student.IndexNumber = $"s{new Random().Next(1, 20000)}";
-            return Ok(student);
+             return Ok(student);
         }
 
         [HttpPut("{id}")] // update
-        public IActionResult UpdateStudent(int id)
+        public IActionResult UpdateStudent(string id)
         {
             return Ok("Aktualizacja zakonczona: " + id);
         }
 
         [HttpDelete("{id}")] // delete
-        public IActionResult DeleteStudent(int id)
+        public IActionResult DeleteStudent(string id)
         {
             _dbService.DeleteStudent(_dbService.GetStudent(id).ElementAt(0));
             return Ok("Usuwanie zakonczone" + id);
